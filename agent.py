@@ -1,4 +1,5 @@
 from typing import List, Tuple
+from argparse import ArgumentParser
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -148,10 +149,15 @@ class PowerlawAgent(Agent):
 
 
 if __name__ == "__main__":
+    # Set up the command line arguments
+    parser = ArgumentParser(description="Generate simulation data using the Powerlaw motion planning algorithm.")
+    parser.add_argument("--viz", action="store_true", help="Display simple matplotlib visualization")
+    args = parser.parse_args()
+
     # Define the agents positions and goals
     agent_poss = [(2, 1.5), (2, -1.5)]
     agent_goals = [(-2, 1.5), (-2, -1.5)]
-    goal = (3, 0) # ego goal. ego position is always 0, 0
+    goal = (10, 0) # ego goal. ego position is always 0, 0
 
     # Define the size of the "canvas"
     low = -5
@@ -161,6 +167,10 @@ if __name__ == "__main__":
     # Store the data and set up the header
     data = []
     header = "x, y, z, vx, vy, " + ", ".join([f"agent_{i}_x, agent_{i}_y" for i in range(len(agent_poss))])
+
+    if args.viz:
+        fig, ax = plt.subplots()
+        ax.set_aspect("equal")
 
     # Iterate through the 2D linspace
     for (i, j) in enumerate(np.linspace(low, high, num)):
@@ -177,17 +187,23 @@ if __name__ == "__main__":
                 forces.append(a2.calculateForce([agent]))
 
             # Record the overall velocity
-            vel = a2.update([agents])
+            vel = a2.update(agents)
+
+            # Plot the velocities as a vector field so long as they're out of collision range
+            if args.viz and min([np.linalg.norm(np.array([j, l]) - p) for p in agent_poss]) > Agent.RADIUS * 2:
+                ax.quiver(j, l, *vel, units="xy")
 
             # Save the generated data
             data.append(
                 np.array([j, l, 0, *vel, *np.array(forces).flatten()])
             )
 
-    # for p in agent_poss:
-    #     ax.add_patch(plt.Circle(p, Agent.RADIUS, color="r"))
-    # ax.scatter(*goal, s=320, marker='*', color='gold', zorder=3)
-    # plt.show()
+    # Add the agents and ego goal to the plot and show
+    if args.viz:
+        for p in agent_poss:
+            ax.add_patch(plt.Circle(p, Agent.RADIUS, color="r"))
+        ax.scatter(*goal, s=320, marker='*', color='gold', zorder=3)
+        plt.show()
 
     # Save the data to a CSV for analysis in paraview
     np.savetxt("data.csv", np.array(data), delimiter=",", fmt="%f", header=header)
