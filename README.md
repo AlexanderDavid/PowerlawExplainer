@@ -10,4 +10,4 @@ Agent's number one task is to get to some predefined goal point. A complex, coll
 
 where **`g`** is the goal, **`p`** is the current position, and `s` is the maximum agent's speed. We can visualize this as a vector field:
 
-![vector field for goal velocity][./imgs/goal_field.png]
+![vector field for goal velocity](./imgs/goal_field.png)
